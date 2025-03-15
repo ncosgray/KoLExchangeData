@@ -1,0 +1,9 @@
+# Kolmafia data
+kolmafia
+.kolmafia
+kolmafia_cache.zip
+
+# Extra bits
+.DS_Store
+archive
+response.json
