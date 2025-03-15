@@ -48,7 +48,7 @@ def configure_game():
         script_ok = os.path.isfile(script_dest)
         java_ok = os.path.isfile(java_path)
         jar_ok = os.path.isfile(jar_path)
-        if not (run_ok and java_ok and jar_ok):
+        if not (run_ok and script_ok and java_ok and jar_ok):
             raise Exception(
                 f"Environment check failed: run_ok={run_ok} script_ok={script_ok} java_ok={java_ok} jar_ok={jar_ok}"
             )
