@@ -28,7 +28,7 @@ script_path = working_dir + "/scripts"
 script_source = function_dir + "/" + script_name
 script_dest = script_path + "/" + script_name
 run_file = script_path + "/run.txt"
-java_path = "/usr/bin/java"
+java_path = "/var/lang/bin/java"
 jar_path = function_dir + "/kolmafia/kolmafia.jar"
 
 

@@ -4,7 +4,7 @@
 
 *What the heck is this?* It's a Docker container definition.
 
-I wanted to find a way to use kolmafia to fully automate downloading Mr. Accessory mall price data from The Kingdom of Loathing every day. This dataset feeds the graphs at the [KoL Exchange Rate website](https://www.nathanatos.com/kol-exchange-rate/), as well as its companion [Android app](https://github.com/ncosgray/KoLExchangeWidget).
+I wanted to find a way to use [KoLmafia](https://wiki.kolmafia.us/) to fully automate downloading Mr. Accessory mall price data from The Kingdom of Loathing every day -- the dataset that feeds the graphs at the [KoL Exchange Rate website](https://www.nathanatos.com/kol-exchange-rate/) and its companion [Android app](https://github.com/ncosgray/KoLExchangeWidget).
 
 This Docker container, designed to run as an AWS Lambda function, is my best effort at doing so.
 
@@ -14,8 +14,8 @@ This Docker container, designed to run as an AWS Lambda function, is my best eff
 
 * Docker
 * AWS
-* VS Code with Dev Containers extension
 * Kingdom of Loathing login
+* VS Code with Dev Containers extension (for testing)
 * a bit of wonkiness
 
 #### Configuration
@@ -62,11 +62,11 @@ Open the KolExchangeData repo in VS Code, installing the Dev Containers extensio
 
 #### Deployment
 
-Set your local environment variables `KOL_ECR` and `KOL_ECR_REPO` to the ID and URI of the AWS Elastic Container Registry repo. Then run the `utils/docker_build.sh` script on your local machine to build and push the image. It will take a while because Docker has to compile the Lambda component libraries. (Note: A future version of this container will hopefully streamline building!)
+Set your local environment variables `KOL_ECR` and `KOL_ECR_REPO` to the ID and URI of the AWS Elastic Container Registry repo. Then run the `utils/docker_build.sh` script on your local machine to build and push the image.
 
 Point your Lambda function to your ECR repo. Add environment variables corresponding to the local variables you set up when you were testing.
 
-Once everything is in place in AWS, you can test the function with `aws lambda invoke`.
+Once everything is in place in AWS, you can test the function with `aws lambda invoke`, or an EventBridge schedule.
 
 ## About
 
