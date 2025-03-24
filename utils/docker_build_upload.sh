@@ -3,7 +3,7 @@
 # AWS docs: https://docs.aws.amazon.com/lambda/latest/dg/python-image.html
 
 # Build and tag the Docker image
-docker buildx build --platform linux/amd64 --provenance=false -t kol-exchange-upload:latest ..
+docker buildx build --platform linux/amd64 --provenance=false -t kol-exchange-upload:latest ../kol-exchange-upload
 docker tag kol-exchange-upload:latest $KOL_ECR_REPO:latest
 
 # Deploy to ECR
