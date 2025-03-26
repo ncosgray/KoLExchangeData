@@ -52,6 +52,8 @@ def plot_data(data: pd.DataFrame, iotm: pd.DataFrame, output_file: str):
         # Save to temp file and upload to S3
         plt.savefig(output_dir + output_file, dpi=600, bbox_inches="tight")
         s3.upload_file(output_dir + output_file, s3_bucket, output_file)
+
+        plt.close()
     except Exception as e:
         raise e
 

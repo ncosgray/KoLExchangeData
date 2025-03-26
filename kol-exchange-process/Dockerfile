@@ -3,6 +3,9 @@ FROM public.ecr.aws/lambda/python:3.13
 # Set working directory
 ARG FUNCTION_DIR="/app"
 
+# matplotlib config
+ENV MPLCONFIGDIR="/tmp"
+
 # Copy script files
 RUN mkdir -p ${FUNCTION_DIR}
 COPY . ${FUNCTION_DIR}
