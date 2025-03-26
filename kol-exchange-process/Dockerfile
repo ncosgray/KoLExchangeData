@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/java:21
+FROM public.ecr.aws/lambda/python:3.13
 
 # Set working directory
 ARG FUNCTION_DIR="/app"
@@ -9,7 +9,7 @@ COPY . ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 
 # Script dependencies
-RUN dnf -y install python3 python3-boto3 shadow-utils
+RUN dnf -y install shadow-utils
 RUN pip install dynamo_pandas pandas matplotlib
 RUN pip install --target ${FUNCTION_DIR} awslambdaric
 
