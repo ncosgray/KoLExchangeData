@@ -14,9 +14,9 @@ db = boto3.client("dynamodb")
 table_name = os.environ.get("TABLE_NAME")
 
 # Plot file output
-output_dir = "/tmp/"
+output_dir = os.environ.get("MPLCONFIGDIR")
 file_prefix = "rate_history"
-file_type = ".png"
+file_type = "png"
 
 
 # Plot exchange rate data and upload to S3 bucket
@@ -44,14 +44,15 @@ def plot_data(data: pd.DataFrame, iotm: pd.DataFrame, output_file: str):
         )
         plt.xlabel("DATE")
         plt.gca().xaxis.set_major_formatter(date_formatter)
-        plt.ylabel("MEAT")
+        plt.ylabel("MEAT / USD")
         plt.gca().yaxis.set_major_formatter(number_formatter)
         plt.legend(["Exchange Rate", "New Mr. Store FOTM", "New Mr. Store IOTM"])
         plt.grid()
 
         # Save to temp file and upload to S3
-        plt.savefig(output_dir + output_file, dpi=600, bbox_inches="tight")
-        s3.upload_file(output_dir + output_file, s3_bucket, output_file)
+        output_path = f"{output_dir}/{output_file}"
+        plt.savefig(output_path, dpi=600, bbox_inches="tight")
+        s3.upload_file(output_path, s3_bucket, output_file)
 
         plt.close()
     except Exception as e:
@@ -76,7 +77,7 @@ def generate_plots():
         iotm.sort_index(inplace=True)
 
         # Plot: all time
-        plot_data(df, iotm, f"{file_prefix}{file_type}")
+        plot_data(df, iotm, f"{file_prefix}.{file_type}")
 
         # Plot: monthly data
         now = datetime.now(timezone.utc)
@@ -89,7 +90,7 @@ def generate_plots():
             plot_data(
                 df.loc[begin_date:today],
                 iotm.loc[begin_date:today],
-                f"{file_prefix}_{months}mo{file_type}",
+                f"{file_prefix}_{months}mo.{file_type}",
             )
     except Exception as e:
         raise e

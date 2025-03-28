@@ -13,7 +13,7 @@ WORKDIR ${FUNCTION_DIR}
 
 # Script dependencies
 RUN dnf -y install shadow-utils
-RUN pip install dynamo_pandas pandas matplotlib
+RUN pip install --no-cache-dir dynamo_pandas pandas matplotlib
 RUN pip install --target ${FUNCTION_DIR} awslambdaric
 
 # Change to nonroot user
