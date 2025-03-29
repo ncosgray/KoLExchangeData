@@ -13,10 +13,12 @@ s3_bucket = os.environ.get("WEB_BUCKET_NAME")
 db = boto3.client("dynamodb")
 table_name = os.environ.get("TABLE_NAME")
 
-# Plot file output
+# File output
 output_dir = os.environ.get("MPLCONFIGDIR")
 file_prefix = "rate_history"
 file_type = "png"
+rate_file = "mr_accessory_rate_history.csv"
+iotm_file = "iotm_history.csv"
 
 
 # Plot exchange rate data and upload to S3 bucket
@@ -59,8 +61,8 @@ def plot_data(data: pd.DataFrame, iotm: pd.DataFrame, output_file: str):
         raise e
 
 
-# Generate plots for various time periods
-def generate_plots():
+# Generate output files for various time periods
+def generate_output_files():
     try:
         # Get data from DynamoDB
         df = get_df(table=table_name)
@@ -76,6 +78,40 @@ def generate_plots():
         iotm["date"] = pd.to_datetime(iotm["game_date"], utc=True)
         iotm.set_index("date", inplace=True)
         iotm.sort_index(inplace=True)
+
+        # CSV files containing exchange rate and IOTM history
+        rate_path = f"{output_dir}/{rate_file}"
+        iotm_path = f"{output_dir}/{iotm_file}"
+        df.to_csv(
+            rate_path,
+            columns=[
+                "game_date",
+                "now",
+                "rate",
+                "mall_price",
+                "iotm_id",
+                "iotm_name",
+                "iotm_is_familiar",
+            ],
+            float_format="%.0f",
+        )
+        iotm.to_csv(
+            iotm_path,
+            columns=[
+                "game_date",
+                "iotm_id",
+                "iotm_name",
+                "iotm_is_familiar",
+                "rate",
+                "mall_price",
+            ],
+            float_format="%.0f",
+        )
+
+        # Upload CSV files to S3
+        s3.upload_file(rate_path, s3_bucket, rate_file)
+        s3.upload_file(iotm_path, s3_bucket, iotm_file)
+        print(f"Uploaded {rate_file} and {iotm_file} to {s3_bucket}.")
 
         # Plot: all time
         print(f"Plotting full history...")
@@ -95,6 +131,8 @@ def generate_plots():
                 iotm.loc[begin_date:today],
                 f"{file_prefix}_{months}mo.{file_type}",
             )
+
+        print(f"Completed output file generation.")
     except Exception as e:
         raise Exception(f"Error generating plot: {e}")
 
@@ -136,14 +174,14 @@ def handler(event, context):
         else:
             print(f"Database updated with key {key}.")
 
-    # Generate and upload plot images
-    generate_plots()
+    # Generate and upload CSVs and plot images
+    generate_output_files()
 
 
 # Main function
 def main():
-    # Only generate plots
-    generate_plots()
+    # Only generate output files
+    generate_output_files()
 
 
 if __name__ == "__main__":

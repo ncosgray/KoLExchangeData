@@ -20,7 +20,11 @@
             "editor.defaultFormatter": "ms-python.black-formatter"
           }
         },
-        "extensions": ["ms-python.black-formatter", "ms-azuretools.vscode-docker"]
+        "extensions": [
+          "ms-python.black-formatter",
+          "ms-azuretools.vscode-docker",
+          "ms-toolsai.jupyter"
+        ]
     }
   },  
 
