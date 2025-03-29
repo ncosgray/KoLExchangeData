@@ -39,8 +39,6 @@ Then, set these environment variables on your computer:
 | `KOL_BUCKET_NAME` | `BUCKET_NAME` | S3 bucket name for collecting raw data |
 | `KOL_WEB_BUCKET_NAME` | `WEB_BUCKET_NAME` | S3 bucket name for outputting graphs |
 | `KOL_TABLE_NAME` | `TABLE_NAME` | DynamoDB table name for data storage |
-| `KOL_LOG_GROUP_NAME` | `LOG_GROUP_NAME` | CloudWatch log group |
-| `KOL_LOG_STREAM_NAME` | `LOG_STREAM_NAME` | CloudWatch log stream |
 | `KOL_USER` | `KOL_USER` | Kingdom of Loathing username |
 | `KOL_PASSWORD` | `KOL_PASSWORD` | Kingdom of Loathing password |
 

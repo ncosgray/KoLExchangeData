@@ -7,9 +7,7 @@
     "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
     "AWS_DEFAULT_REGION": "${localEnv:AWS_DEFAULT_REGION}",
     "WEB_BUCKET_NAME": "${localEnv:KOL_WEB_BUCKET_NAME}",
-    "TABLE_NAME": "${localEnv:KOL_TABLE_NAME}",
-    "LOG_GROUP_NAME": "${localEnv:KOL_LOG_GROUP_NAME}",
-    "LOG_STREAM_NAME": "${localEnv:KOL_LOG_STREAM_NAME}"
+    "TABLE_NAME": "${localEnv:KOL_TABLE_NAME}"
   },
 
   // Configure tool-specific properties.

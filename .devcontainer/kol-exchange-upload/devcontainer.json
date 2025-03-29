@@ -7,8 +7,6 @@
     "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
     "AWS_DEFAULT_REGION": "${localEnv:AWS_DEFAULT_REGION}",
     "BUCKET_NAME": "${localEnv:KOL_BUCKET_NAME}",
-    "LOG_GROUP_NAME": "${localEnv:KOL_LOG_GROUP_NAME}",
-    "LOG_STREAM_NAME": "${localEnv:KOL_LOG_STREAM_NAME}",
     "KOL_USER": "${localEnv:KOL_USER}",
     "KOL_PASSWORD": "${localEnv:KOL_PASSWORD}"
   },

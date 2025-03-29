@@ -64,6 +64,7 @@ def generate_plots():
     try:
         # Get data from DynamoDB
         df = get_df(table=table_name)
+        print(f"Got {len(df)} days of history from the database.")
 
         # Exchange rate sorted by date
         df["date"] = pd.to_datetime(df["game_date"], utc=True)
@@ -77,6 +78,7 @@ def generate_plots():
         iotm.sort_index(inplace=True)
 
         # Plot: all time
+        print(f"Plotting full history...")
         plot_data(df, iotm, f"{file_prefix}.{file_type}")
 
         # Plot: monthly data
@@ -87,13 +89,14 @@ def generate_plots():
             begin_date = (
                 (now - timedelta(days=months * 30)).replace(day=1).strftime("%Y-%m-%d")
             )
+            print(f"Plotting {begin_date} through {today}...")
             plot_data(
                 df.loc[begin_date:today],
                 iotm.loc[begin_date:today],
                 f"{file_prefix}_{months}mo.{file_type}",
             )
     except Exception as e:
-        raise e
+        raise Exception(f"Error generating plot: {e}")
 
 
 # Add rate data from S3 to database
@@ -129,7 +132,9 @@ def handler(event, context):
             data = json.loads(response["Body"].read().decode("utf-8"))
             add_rate_data(data)
         except Exception as e:
-            raise e
+            raise Exception(f"Error updating database: {e}")
+        else:
+            print(f"Database updated with key {key}.")
 
     # Generate and upload plot images
     generate_plots()
