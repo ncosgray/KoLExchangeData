@@ -20,5 +20,7 @@ aws lambda update-function-code \
   --image-uri $KOL_ECR/$1/repo:latest \
   --publish
 
-# Invoke the function once to test
-#aws lambda invoke --function-name $1 response.json
+# Show an example of how to invoke the function
+echo
+echo Done! To test the function run the following command:
+echo % aws lambda invoke --function-name ${1} response.json
