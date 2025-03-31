@@ -15,28 +15,27 @@ kol_password = os.environ.get("KOL_PASSWORD")
 s3 = boto3.client("s3")
 s3_bucket = os.environ.get("BUCKET_NAME")
 
-# Configure CloudWatch Logs client
-logs = boto3.client("logs")
-log_group_name = os.environ.get("LOG_GROUP_NAME")
-log_stream_name = os.environ.get("LOG_STREAM_NAME")
-
 # Set paths
 function_dir = "/app"
 working_dir = "/tmp/.kolmafia"
+install_script = f"{function_dir}/install_kolmafia.sh"
 script_name = "get_mr_a_price.ash"
-script_path = working_dir + "/scripts"
-script_source = function_dir + "/" + script_name
-script_dest = script_path + "/" + script_name
-run_file = script_path + "/run.txt"
+script_dir = f"{working_dir}/scripts"
+script_source = f"{function_dir}/{script_name}"
+script_dest = f"{script_dir}/{script_name}"
+run_file = f"{script_dir}/run.txt"
 java_path = "/var/lang/bin/java"
-jar_path = function_dir + "/kolmafia/kolmafia.jar"
+jar_file = "/tmp/kolmafia/kolmafia.jar"
 
 
 # Configure and validate environment
 def configure_game():
     try:
+        # Download and install the current version of Kolmafia
+        os.system(f"bash {install_script}")
+
         # Create game settings directory and copy scripts into place
-        os.makedirs(script_path, exist_ok=True)
+        os.makedirs(script_dir, exist_ok=True)
         os.system(f"cp {script_source} {script_dest}")
         os.system(f'echo "login {kol_user}" > {run_file}')
         os.system(f'echo "{kol_password}" >> {run_file}')
@@ -47,7 +46,7 @@ def configure_game():
         run_ok = os.path.isfile(run_file)
         script_ok = os.path.isfile(script_dest)
         java_ok = os.path.isfile(java_path)
-        jar_ok = os.path.isfile(jar_path)
+        jar_ok = os.path.isfile(jar_file)
         if not (run_ok and script_ok and java_ok and jar_ok):
             raise Exception(
                 f"Environment check failed: run_ok={run_ok} script_ok={script_ok} java_ok={java_ok} jar_ok={jar_ok}"
@@ -64,14 +63,13 @@ def fetch_data_from_game():
         "-jar",
         "-Djava.awt.headless=true",
         "-DuseCWDasROOT=true",
-        jar_path,
+        jar_file,
         "--CLI",
     ]
     retries = 5
     for attempt in range(1, retries):
-        log_message(
-            f"Attempt {attempt}: Fetching exchange rate and IOTM data from the game...",
-            level="INFO",
+        print(
+            f"Attempt {attempt}: Fetching exchange rate and IOTM data from the game..."
         )
         try:
             # Run kolmafia script
@@ -92,25 +90,24 @@ def fetch_data_from_game():
             else:
                 result_data = result.stdout
                 if debug:
-                    log_message(result_data, level="INFO")
+                    print(result_data)
 
                 # Find mall price data
                 for line in result_data.split("\n"):
                     if "mall_price" in line:
                         data = json.loads(line)
                 if data:
-                    log_message(
-                        f"Current mall price: {data['mall_price']}", level="INFO"
-                    )
+                    print(f"Current mall price: {data['mall_price']}")
+                    print(f"Current IOTM: {data['iotm_name']}")
                     return data
                 else:
                     # Retry if rate not found in result
-                    raise Exception("Mall price not found in result.")
+                    raise Exception(f"Mall price not found in result: {result_data}")
         except TimeoutExpired as e:
-            log_message(f"Attempt {attempt}: Timeout error: {e.output}", level="ERROR")
+            print(f"Attempt {attempt}: Timeout error: {e.output}")
             time.sleep(attempt * 30)
         except Exception as e:
-            log_message(f"Attempt {attempt}: Error fetching data: {e}", level="ERROR")
+            print(f"Attempt {attempt}: Error fetching data: {e}")
             time.sleep(attempt * 30)
 
     # Give up
@@ -125,30 +122,14 @@ def save_data_to_s3(data):
         filename = f"{folder}/{data['game_date']}.json"
 
         s3.put_object(Body=json.dumps(data, indent=4), Bucket=s3_bucket, Key=filename)
-        log_message(f"Data saved to S3: {filename}", level="INFO")
+        print(f"Data saved to S3 as {filename}")
     except Exception as e:
-        raise Exception(f"Error saving data to S3: {e}", level="ERROR")
+        raise Exception(f"Error saving data to S3: {e}")
 
 
-# Log function for AWS CloudWatch
-def log_message(message, level="INFO"):
-    if debug:
-        print(message)
-    else:
-        try:
-            # Write to CloudWatch Logs
-            logs.put_log_events(
-                logGroupName=log_group_name,
-                logStreamName=log_stream_name,
-                logEvents=[
-                    {
-                        "timestamp": int(time.time() * 1000),
-                        "message": f"{level}: {message}",
-                    }
-                ],
-            )
-        except Exception as e:
-            print(f"Error logging to CloudWatch: {e}")
+# Lambda handler
+def handler(event, context):
+    main()
 
 
 # Main function
@@ -159,14 +140,9 @@ def main():
         if data:
             save_data_to_s3(data)
     except Exception as e:
-        log_message(f"Script failed with error: {e}", level="ERROR")
-    finally:
-        log_message("Finished running the script.", level="INFO")
-
-
-# Lambda handler
-def handler(event, context):
-    main()
+        raise Exception(f"Script failed with error: {e}")
+    else:
+        print("Finished running the script.")
 
 
 if __name__ == "__main__":

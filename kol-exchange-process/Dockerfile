@@ -1,7 +1,10 @@
-FROM public.ecr.aws/lambda/java:21
+FROM public.ecr.aws/lambda/python:3.13
 
 # Set working directory
 ARG FUNCTION_DIR="/app"
+
+# matplotlib config
+ENV MPLCONFIGDIR="/tmp"
 
 # Copy script files
 RUN mkdir -p ${FUNCTION_DIR}
@@ -9,11 +12,9 @@ COPY . ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 
 # Script dependencies
-RUN dnf -y install gzip jq tar python3 python3-boto3 shadow-utils wget
+RUN dnf -y install shadow-utils
+RUN pip install --no-cache-dir dynamo_pandas pandas matplotlib
 RUN pip install --target ${FUNCTION_DIR} awslambdaric
-
-# Install kolmafia
-RUN bash install_kolmafia.sh
 
 # Change to nonroot user
 RUN /usr/sbin/adduser nonroot

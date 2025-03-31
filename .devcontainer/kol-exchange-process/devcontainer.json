@@ -1,16 +1,13 @@
 {
-  "name": "kol-exchange-upload",
+  "name": "kol-exchange-process",
 
   // Get environment variables from host OS
   "containerEnv": {
     "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
     "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
     "AWS_DEFAULT_REGION": "${localEnv:AWS_DEFAULT_REGION}",
-    "BUCKET_NAME": "${localEnv:KOL_BUCKET_NAME}",
-    "LOG_GROUP_NAME": "${localEnv:KOL_LOG_GROUP_NAME}",
-    "LOG_STREAM_NAME": "${localEnv:KOL_LOG_STREAM_NAME}",
-    "KOL_USER": "${localEnv:KOL_USER}",
-    "KOL_PASSWORD": "${localEnv:KOL_PASSWORD}"
+    "WEB_BUCKET_NAME": "${localEnv:KOL_WEB_BUCKET_NAME}",
+    "TABLE_NAME": "${localEnv:KOL_TABLE_NAME}"
   },
 
   // Configure tool-specific properties.
@@ -23,7 +20,11 @@
             "editor.defaultFormatter": "ms-python.black-formatter"
           }
         },
-        "extensions": ["ms-python.black-formatter", "ms-azuretools.vscode-docker"]
+        "extensions": [
+          "ms-python.black-formatter",
+          "ms-azuretools.vscode-docker",
+          "ms-toolsai.jupyter"
+        ]
     }
   },  
 
@@ -32,7 +33,7 @@
 
   "build": {
     // Path is relative to the devcontainer.json file.
-    "dockerfile": "../Dockerfile"
+    "dockerfile": "../../kol-exchange-process/Dockerfile"
   }
 
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
