@@ -2,8 +2,8 @@
 
 # Source: https://github.com/loathers/kolmafia-docker/blob/main/99-install-kolmafia
 
-mkdir -p /app/kolmafia
-cd /app/kolmafia
+mkdir -p /tmp/kolmafia
+cd /tmp/kolmafia
 
 echo Downloading latest build of KoLmafia...
 MAFIA_RELEASE=$(curl --fail --silent --globoff 'https://api.github.com/repos/kolmafia/kolmafia/releases/latest' | jq --raw-output '.assets[] | select(.browser_download_url | contains(".jar")).browser_download_url')
@@ -11,7 +11,7 @@ if [[ -z "$MAFIA_RELEASE" ]]; then
  	echo "ERROR: Could not determine latest mafia release from GitHub!"
  	exit 1
 fi
-wget -N "$MAFIA_RELEASE"
+wget -N --quiet "$MAFIA_RELEASE"
 
 latest=$(ls -dt KoLmafia-*.jar | head -1)
 oldest=$(ls -td KoLmafia-*.jar | awk 'NR>5')

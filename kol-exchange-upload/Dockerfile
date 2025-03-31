@@ -12,9 +12,6 @@ WORKDIR ${FUNCTION_DIR}
 RUN dnf -y install gzip jq tar python3 python3-boto3 shadow-utils wget
 RUN pip install --target ${FUNCTION_DIR} awslambdaric
 
-# Install kolmafia
-RUN bash install_kolmafia.sh
-
 # Change to nonroot user
 RUN /usr/sbin/adduser nonroot
 USER nonroot

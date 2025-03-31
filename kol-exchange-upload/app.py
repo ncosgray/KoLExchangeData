@@ -18,20 +18,24 @@ s3_bucket = os.environ.get("BUCKET_NAME")
 # Set paths
 function_dir = "/app"
 working_dir = "/tmp/.kolmafia"
+install_script = f"{function_dir}/install_kolmafia.sh"
 script_name = "get_mr_a_price.ash"
-script_path = working_dir + "/scripts"
-script_source = function_dir + "/" + script_name
-script_dest = script_path + "/" + script_name
-run_file = script_path + "/run.txt"
+script_dir = f"{working_dir}/scripts"
+script_source = f"{function_dir}/{script_name}"
+script_dest = f"{script_dir}/{script_name}"
+run_file = f"{script_dir}/run.txt"
 java_path = "/var/lang/bin/java"
-jar_path = function_dir + "/kolmafia/kolmafia.jar"
+jar_file = "/tmp/kolmafia/kolmafia.jar"
 
 
 # Configure and validate environment
 def configure_game():
     try:
+        # Download and install the current version of Kolmafia
+        os.system(f"bash {install_script}")
+
         # Create game settings directory and copy scripts into place
-        os.makedirs(script_path, exist_ok=True)
+        os.makedirs(script_dir, exist_ok=True)
         os.system(f"cp {script_source} {script_dest}")
         os.system(f'echo "login {kol_user}" > {run_file}')
         os.system(f'echo "{kol_password}" >> {run_file}')
@@ -42,7 +46,7 @@ def configure_game():
         run_ok = os.path.isfile(run_file)
         script_ok = os.path.isfile(script_dest)
         java_ok = os.path.isfile(java_path)
-        jar_ok = os.path.isfile(jar_path)
+        jar_ok = os.path.isfile(jar_file)
         if not (run_ok and script_ok and java_ok and jar_ok):
             raise Exception(
                 f"Environment check failed: run_ok={run_ok} script_ok={script_ok} java_ok={java_ok} jar_ok={jar_ok}"
@@ -59,7 +63,7 @@ def fetch_data_from_game():
         "-jar",
         "-Djava.awt.headless=true",
         "-DuseCWDasROOT=true",
-        jar_path,
+        jar_file,
         "--CLI",
     ]
     retries = 5
