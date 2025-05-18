@@ -28,6 +28,7 @@ At a minimum, you will need to configure the following AWS resources, including 
 * **S3** and **DynamoDB** for exchange rate data storage
 * **CloudWatch** script logs
 * **EventBridge** if you want to run on a schedule
+* **API Gateway** for the data API
 
 Then, set these environment variables on your computer:
 
@@ -81,6 +82,10 @@ Set your local environment variable `KOL_ECR` to the location of your AWS Elasti
 Point your Lambda function to your ECR repo. Add environment variables corresponding to the local variables you set up when you were testing.
 
 Once everything is in place in AWS, you can test the function with `aws lambda invoke`, an EventBridge schedule, and/or a trigger that fires when new data lands in S3.
+
+## Data API
+
+The **kol-exchange-data-api** subdirectory contains a simple Python Lambda function designed to be triggered by an AWS API Gateway. This API supports retrieving the current exchange rate data by looking up the most recent JSON file in the S3 data bucket, or querying a specific date's exchange rate. It does not require deployment as a container.
 
 ## About
 
