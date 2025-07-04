@@ -145,7 +145,7 @@ def add_rate_data(data):
             "rate": {"N": str(data["rate"])},
             "iotm_id": {"N": str(data["iotm_id"])},
             "iotm_name": {"S": data["iotm_name"]},
-            "iotm_is_familiar": {"BOOL": data["iotm_is_familiar"] == "True"},
+            "iotm_is_familiar": {"BOOL": data["iotm_is_familiar"] == True},
             "game_date": {"S": data["game_date"]},
             "now": {"S": data["now"]},
         }
