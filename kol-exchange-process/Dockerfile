@@ -12,7 +12,7 @@ COPY . ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 
 # Script dependencies
-RUN dnf -y install shadow-utils
+RUN dnf -y install gzip shadow-utils tar
 RUN pip install --no-cache-dir dynamo_pandas pandas matplotlib
 RUN pip install --target ${FUNCTION_DIR} awslambdaric
 
