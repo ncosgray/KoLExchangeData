@@ -27,6 +27,17 @@ run_file = f"{script_dir}/run.txt"
 java_path = "/var/lang/bin/java"
 jar_file = "/tmp/kolmafia/kolmafia.jar"
 
+# Explicitly use UTF-8
+env = os.environ.copy()
+env.update(
+    {
+        "LANG": "C.utf8",
+        "LC_ALL": "C.utf8",
+        "LC_CTYPE": "C.utf8",
+        "PYTHONIOENCODING": "utf-8",
+    }
+)
+
 
 # Configure and validate environment
 def configure_game():
@@ -79,9 +90,11 @@ def fetch_data_from_game():
                 cwd=working_dir,
                 stdin=open(run_file, "r"),
                 check=True,
-                text=True,
                 capture_output=True,
+                text=True,
+                encoding="utf-8",
                 timeout=60,
+                env=env,
             )
 
             # Check result
@@ -121,7 +134,12 @@ def save_data_to_s3(data):
         folder = (data["game_date"])[:4]
         filename = f"{folder}/{data['game_date']}.json"
 
-        s3.put_object(Body=json.dumps(data, indent=4), Bucket=s3_bucket, Key=filename)
+        s3.put_object(
+            Body=json.dumps(data, indent=4, ensure_ascii=False),
+            ContentType="application/json; charset=utf-8",
+            Bucket=s3_bucket,
+            Key=filename,
+        )
         print(f"Data saved to S3 as {filename}")
     except Exception as e:
         raise Exception(f"Error saving data to S3: {e}")
