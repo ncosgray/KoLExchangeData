@@ -78,7 +78,8 @@ def fetch_data(date_param=None, xml_param=None):
                 # Return the XML version of the object (formatted rate only)
                 return f"<rate>{rate:,} Meat</rate>"
             else:
-                # Return the default JSON
+                # Return the default JSON with formatted rate added
+                result_dict["rate_formatted"] = f"$1 US = {rate:,} Meat"
                 return result_dict
         except Exception as e:
             return error_object("Data parsing error.")
