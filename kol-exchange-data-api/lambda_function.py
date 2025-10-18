@@ -73,13 +73,19 @@ def fetch_data(date_param=None, xml_param=None):
     if result:
         try:
             result_dict = json.loads(result)
-            rate = result_dict.get("rate", None)
+            rate = f"{result_dict.get('rate', 0):,} Meat"
             if xml_param:
                 # Return the XML version of the object (formatted rate only)
-                return f"<rate>{rate:,} Meat</rate>"
+                return f"<rate>{rate}</rate>"
             else:
-                # Return the default JSON with formatted rate added
-                result_dict["rate_formatted"] = f"$1 US = {rate:,} Meat"
+                # Return the default JSON with formatted rate and IOTM info added
+                result_dict["rate_formatted"] = f"$1 US = {rate}"
+                iotm_label = (
+                    "FOTM" if result_dict.get("iotm_is_familiar", False) else "IOTM"
+                )
+                result_dict["iotm_formatted"] = (
+                    f"{iotm_label}: {result_dict.get('iotm_name', '?')}"
+                )
                 return result_dict
         except Exception as e:
             return error_object("Data parsing error.")
