@@ -10,6 +10,11 @@
     "TABLE_NAME": "${localEnv:KOL_TABLE_NAME}"
   },
 
+	// Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+  },
+
   // Configure tool-specific properties.
   "customizations": {
     // Configure properties specific to VS Code.
@@ -29,7 +34,13 @@
   },  
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  //"postCreateCommand": "",
+  "postCreateCommand": "dnf -y install git",
+
+  // Ensure VS Code waits for git to be installed before connecting/activating extensions.
+  "waitFor": "postCreateCommand",
+
+  // Path is relative to the project root.
+  "runArgs": ["--env-file", ".devcontainer/devcontainer.env"],
 
   "build": {
     // Path is relative to the devcontainer.json file.

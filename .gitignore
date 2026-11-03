@@ -7,3 +7,6 @@ kolmafia_cache.zip
 .DS_Store
 archive
 response.json
+
+# Secrets
+devcontainer.env
