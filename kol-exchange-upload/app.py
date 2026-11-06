@@ -11,6 +11,24 @@ debug = False
 kol_user = os.environ.get("KOL_USER")
 kol_password = os.environ.get("KOL_PASSWORD")
 
+# In Lambda, prefer credentials from Secrets Manager when a secret is configured
+kol_secret_id = os.environ.get("KOL_SECRET_ID")
+if kol_secret_id:
+    try:
+        secret = json.loads(
+            boto3.client("secretsmanager").get_secret_value(SecretId=kol_secret_id)[
+                "SecretString"
+            ]
+        )
+        kol_user = secret["username"]
+        kol_password = secret["password"]
+    except Exception as e:
+        raise RuntimeError(
+            f"Could not load KoL credentials from secret {kol_secret_id}: {e!r}. "
+            'The secret must hold JSON {"username": "...", "password": "..."}; '
+            "set it with infra/set_kol_secret.py."
+        ) from e
+
 # Configure S3 bucket
 s3 = boto3.client("s3")
 s3_bucket = os.environ.get("BUCKET_NAME")
@@ -48,10 +66,11 @@ def configure_game():
         # Create game settings directory and copy scripts into place
         os.makedirs(script_dir, exist_ok=True)
         os.system(f"cp {script_source} {script_dest}")
-        os.system(f'echo "login {kol_user}" > {run_file}')
-        os.system(f'echo "{kol_password}" >> {run_file}')
-        os.system(f'echo "call {script_name}" >> {run_file}')
-        os.system(f'echo "quit" >> {run_file}')
+        with open(run_file, "w") as f:
+            f.write(f"login {kol_user}\n")
+            f.write(f"{kol_password}\n")
+            f.write(f"call {script_name}\n")
+            f.write("quit\n")
 
         # Validate environment
         run_ok = os.path.isfile(run_file)
@@ -68,7 +87,7 @@ def configure_game():
 
 
 # Fetch exchange rate and IOTM data from the game
-def fetch_data_from_game():
+def fetch_data_from_game(context=None):
     cmd = [
         java_path,
         "-jar",
@@ -78,7 +97,22 @@ def fetch_data_from_game():
         "--CLI",
     ]
     retries = 5
-    for attempt in range(1, retries):
+    attempt_timeout = 60
+    # Time to leave after the last attempt for saving to S3 and a clean exit
+    reserve_seconds = 15
+
+    def seconds_left():
+        if context is None:
+            return float("inf")
+        return context.get_remaining_time_in_millis() / 1000
+
+    for attempt in range(1, retries + 1):
+        # Back off before each retry, but only if the backoff and attempt still fit
+        delay = (attempt - 1) * 30
+        if seconds_left() < delay + attempt_timeout + reserve_seconds:
+            print(f"Attempt {attempt}: not enough time left for another attempt")
+            break
+        time.sleep(delay)
         print(
             f"Attempt {attempt}: Fetching exchange rate and IOTM data from the game..."
         )
@@ -93,7 +127,7 @@ def fetch_data_from_game():
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
-                timeout=60,
+                timeout=attempt_timeout,
                 env=env,
             )
 
@@ -118,10 +152,8 @@ def fetch_data_from_game():
                     raise Exception(f"Mall price not found in result: {result_data}")
         except TimeoutExpired as e:
             print(f"Attempt {attempt}: Timeout error: {e.output}")
-            time.sleep(attempt * 30)
         except Exception as e:
             print(f"Attempt {attempt}: Error fetching data: {e}")
-            time.sleep(attempt * 30)
 
     # Give up
     raise Exception("Failed to fetch data after all retries.")
@@ -147,14 +179,14 @@ def save_data_to_s3(data):
 
 # Lambda handler
 def handler(event, context):
-    main()
+    main(context)
 
 
 # Main function
-def main():
+def main(context=None):
     try:
         configure_game()
-        data = fetch_data_from_game()
+        data = fetch_data_from_game(context)
         if data:
             save_data_to_s3(data)
     except Exception as e:
