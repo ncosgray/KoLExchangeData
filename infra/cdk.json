@@ -1,0 +1,23 @@
+{
+  "app": "python3 app.py",
+  "watch": {
+    "include": [
+      "**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "requirements*.txt",
+      "**/__pycache__",
+      ".venv"
+    ]
+  },
+  "context": {
+    "kol:secretName": "kol-exchange/kol-credentials",
+    "kol:bucketUserName": "kol-exchange-upload",
+    "kol:enableTriggers": true,
+    "kol:legacyApiFunctionName": "",
+    "kol:scheduleCron": "15 3 * * ? *",
+    "kol:scheduleTimeZone": "America/Los_Angeles"
+  }
+}

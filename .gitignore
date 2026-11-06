@@ -10,3 +10,9 @@ response.json
 
 # Secrets
 devcontainer.env
+
+# CDK
+infra/cdk.out
+infra/.venv
+infra/cdk.context.json
+__pycache__
