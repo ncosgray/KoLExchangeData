@@ -29,19 +29,23 @@ At a minimum, you will need to configure the following AWS resources, including 
 * **CloudWatch** script logs
 * **EventBridge** if you want to run on a schedule
 * **API Gateway** for the data API
+* **Secrets Manager** (recommended) to securely store KoL credentials
+
+Alternatively, the [CDK stack](infra/README.md) creates or adopts everything except the IAM user; see Deployment.
 
 Then, set these environment variables on your computer:
 
-| Local environment variable | Lambda environment variable | Purpose |
-| :--: | :--: | :--: |
-| `AWS_ACCESS_KEY_ID` | n/a | access key for the IAM user |
-| `AWS_SECRET_ACCESS_KEY` | n/a | secret for the IAM user |
-| `AWS_DEFAULT_REGION` | n/a | AWS region |
-| `KOL_BUCKET_NAME` | `BUCKET_NAME` | S3 bucket name for collecting raw data |
-| `KOL_WEB_BUCKET_NAME` | `WEB_BUCKET_NAME` | S3 bucket name for outputting graphs |
-| `KOL_TABLE_NAME` | `TABLE_NAME` | DynamoDB table name for data storage |
-| `KOL_USER` | `KOL_USER` | Kingdom of Loathing username |
-| `KOL_PASSWORD` | `KOL_PASSWORD` | Kingdom of Loathing password |
+| Local environment variable | Lambda environment variable | Purpose | Notes |
+| :--: | :--: | :--: | :--: |
+| `AWS_ACCESS_KEY_ID` | n/a | access key for the IAM user | |
+| `AWS_SECRET_ACCESS_KEY` | n/a | secret for the IAM user | |
+| `AWS_DEFAULT_REGION` | n/a | AWS region | |
+| `KOL_BUCKET_NAME` | `BUCKET_NAME` | S3 bucket name for collecting raw data | |
+| `KOL_WEB_BUCKET_NAME` | `WEB_BUCKET_NAME` | S3 bucket name for outputting graphs | |
+| `KOL_TABLE_NAME` | `TABLE_NAME` | DynamoDB table name for data storage | |
+| `KOL_USER` | `KOL_USER` | Kingdom of Loathing username | ignored when `KOL_SECRET_ID` is set |
+| `KOL_PASSWORD` | `KOL_PASSWORD` | Kingdom of Loathing password | ignored when `KOL_SECRET_ID` is set |
+| n/a | `KOL_SECRET_ID` | Kingdom of Loathing credentials | always used by CDK |
 
 Open the KolExchangeData repo in VS Code, installing the Dev Containers extension if necessary. You will be prompted to choose a container (see below for a description of each container). After you do so, things should boot up into an environment where you can test uploading data or generating graphs simply by running `python app.py`.
 
@@ -77,11 +81,19 @@ This container is designed to run on a trigger whenever a new exchange rate file
 
 ## Deployment
 
+#### Manual
+
 Set your local environment variable `KOL_ECR` to the location of your AWS Elastic Container Registry. Then run the `docker_build.sh` script, passing the container name as an argument, to build and push the image to ECR.
 
-Point your Lambda function to your ECR repo. Add environment variables corresponding to the local variables you set up when you were testing.
+Point your Lambda function to your ECR repo. Add environment variables corresponding to the local variables you set up when you were testing, using `KOL_SECRET_ID` for the login (see the table above).
 
 Once everything is in place in AWS, you can test the function with `aws lambda invoke`, an EventBridge schedule, and/or a trigger that fires when new data lands in S3.
+
+`docker_build.sh` updates the Lambda function named after the container (e.g. `kol-exchange-upload`), so it only works with hand-built functions. Don't use it with the CDK stack.
+
+#### CDK
+
+See [infra/README.md](infra/README.md).
 
 ## Data API
 
@@ -90,3 +102,5 @@ The **kol-exchange-data-api** subdirectory contains a simple Python Lambda funct
 ## About
 
 Author: [Nathan Cosgray](https://www.nathanatos.com)
+
+*Portions of this app were written by Claude Code and reviewed, tested and approved by a human.*
