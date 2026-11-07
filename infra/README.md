@@ -27,7 +27,11 @@ hard-coded in this repo:
 | `KOL_AWS_APPLICATION_ARN` | Optional: myApplications ARN for the `awsApplication` tag. Set it if the existing resources already have this tag, or a deploy will remove it |
 
 Other options (secret name, IAM user granted access in the raw bucket policy, schedule,
-triggers, legacy API function) are in `cdk.json`.
+triggers) are in `cdk.json`.
+
+`kol:enableTriggers` turns the daily schedule and the raw bucket's S3 trigger on or off, for
+example to pause the pipeline. Change it in `cdk.json`, not with `-c` on the command line: a
+`-c` value applies to that one command only, so the next plain `cdk deploy` quietly undoes it.
 
 ## AWS credentials: use an admin profile
 
@@ -86,31 +90,3 @@ cdk deploy
 
 Docker must be running: `cdk deploy` builds both container images and pushes them to the CDK
 assets repository, replacing `docker_build.sh`.
-
-## Cutting over from the hand-built setup
-
-Triggers are off by default (`kol:enableTriggers` in `cdk.json`) so the new functions don't run
-alongside the existing ones. To test, invoke the functions by hand (names are in the stack
-outputs). Note that they read and write the production buckets and table.
-
-Make the cutover settings changes in `cdk.json`, not with `-c` on the command line. A `-c`
-value applies to that one command only, so the next plain `cdk deploy` quietly undoes it: it
-removes the daily schedule and every event notification on the raw bucket, and points the API
-back at the old function, which fails once step 6 has deleted it.
-
-When ready:
-
-1. Disable the old EventBridge Scheduler schedule that invokes the old upload function.
-2. Check `kol:scheduleCron` and `kol:scheduleTimeZone` in `cdk.json`.
-3. Set `kol:enableTriggers` to `true` in `cdk.json` and run `cdk deploy`. This also
-   **replaces** the raw bucket's existing S3 trigger (to the old process function) with one to
-   the new function.
-4. Cut the API over to the new function: set `kol:legacyApiFunctionName` to `""` in
-   `cdk.json` and run `cdk deploy`. Until then the imported API's integration still targets
-   the old hand-built function. The URL doesn't change, so clients need no changes. To roll
-   back, set it back to the old function's name and deploy; that works only until step 6
-   deletes the old function.
-5. Commit the `cdk.json` changes, so every later deploy keeps the triggers and the new API
-   target.
-6. Delete the old Lambdas, schedule, and ECR repos. Keep the API Gateway: it is now part of
-   this stack.

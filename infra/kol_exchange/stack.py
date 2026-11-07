@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Optional
 
 from aws_cdk import (
-    ArnFormat,
     CfnOutput,
     Duration,
     RemovalPolicy,
@@ -83,7 +82,7 @@ class KolExchangeStack(Stack):
     def container_function(
         self, construct_id: str, directory: str, environment: dict
     ) -> lambda_.DockerImageFunction:
-        """Container Lambda sized like the existing hand-built ones. Build-context
+        """Container Lambda sized like the original hand-built ones. Build-context
         excludes come from each directory's .dockerignore."""
         return lambda_.DockerImageFunction(
             self,
@@ -193,7 +192,7 @@ class KolExchangeStack(Stack):
             self, "KolSecretRef", kol_secret_resource.ref
         )
 
-        # ---- Functions (sizes match the existing hand-built Lambdas) ------------------------
+        # ---- Functions (sizes match the original hand-built Lambdas) ------------------------
 
         # Upload: Kolmafia container that fetches the rate and writes JSON to the raw bucket
         upload_fn = self.container_function(
@@ -237,16 +236,10 @@ class KolExchangeStack(Stack):
         raw_bucket.grant_read(api_fn)
 
         # ---- HTTP API -----------------------------------------------------------------------
-        # The existing API, its stage, route and integration are imported with `cdk import`
-        # so clients keep the same execute-api URL (it is tied to the API ID and can never be
+        # The API, its stage, route and integration were imported with `cdk import` so
+        # clients keep the same execute-api URL (it is tied to the API ID and can never be
         # recreated). L1 constructs are used so every property mirrors the live configuration
         # exactly. RETAIN: deleting the API would permanently lose the URL.
-        #
-        # While kol:legacyApiFunctionName is set, the integration targets that hand-built
-        # function (as it does today, so importing changes nothing). Clear it in cdk.json to
-        # cut the API over to ApiFunction (not with -c: the next deploy without it would point
-        # the API back at the old function).
-        legacy_api_fn_name = self.node.try_get_context("kol:legacyApiFunctionName")
 
         http_api = apigw.CfnApi(
             self,
@@ -276,43 +269,32 @@ class KolExchangeStack(Stack):
             ),
         )
 
-        integration_target_arn = (
-            self.format_arn(
-                service="lambda",
-                resource="function",
-                resource_name=legacy_api_fn_name,
-                arn_format=ArnFormat.COLON_RESOURCE_NAME,
-            )
-            if legacy_api_fn_name
-            else api_fn.function_arn
-        )
-
         api_integration = apigw.CfnIntegration(
             self,
             "DataApiIntegration",
             api_id=http_api.ref,
             integration_type="AWS_PROXY",
             integration_method="POST",
-            integration_uri=integration_target_arn,
+            integration_uri=api_fn.function_arn,
             connection_type="INTERNET",
             payload_format_version="2.0",
             timeout_in_millis=30000,
         )
-        if not legacy_api_fn_name:
-            # Must exist before the integration switches to the new function
-            api_permission = lambda_.CfnPermission(
-                self,
-                "ApiInvokePermission",
-                action="lambda:InvokeFunction",
-                function_name=api_fn.function_arn,
-                principal="apigateway.amazonaws.com",
-                source_arn=self.format_arn(
-                    service="execute-api",
-                    resource=http_api.ref,
-                    resource_name="*/*/getrate",
-                ),
-            )
-            api_integration.add_resource_dependency(api_permission)
+        # Created before the integration so the API can invoke the function as soon as it
+        # points at it
+        api_permission = lambda_.CfnPermission(
+            self,
+            "ApiInvokePermission",
+            action="lambda:InvokeFunction",
+            function_name=api_fn.function_arn,
+            principal="apigateway.amazonaws.com",
+            source_arn=self.format_arn(
+                service="execute-api",
+                resource=http_api.ref,
+                resource_name="*/*/getrate",
+            ),
+        )
+        api_integration.add_resource_dependency(api_permission)
 
         api_route = apigw.CfnRoute(
             self,
@@ -328,12 +310,11 @@ class KolExchangeStack(Stack):
             resource.apply_removal_policy(RemovalPolicy.RETAIN)
 
         # ---- Triggers -----------------------------------------------------------------------
-        # Off by default so this stack doesn't double-run alongside the existing
-        # hand-built schedule and S3 trigger. Enable at cutover by setting kol:enableTriggers
-        # to true in cdk.json (not with -c: the next deploy without it would remove the
-        # schedule and all of the raw bucket's notifications). Note: because the raw bucket is
-        # now CDK-managed, the S3 notification REPLACES the bucket's existing trigger to the
-        # old process function.
+        # The daily schedule and the raw bucket's S3 trigger, switched by kol:enableTriggers
+        # (e.g. set it to false to pause the pipeline). Change it in cdk.json, not with -c:
+        # the next deploy without it would undo the change. The raw bucket is CDK-managed, so
+        # this notification replaces any added to the bucket outside the stack, and disabling
+        # triggers removes all of its notifications.
         if enable_triggers:
             scheduler.Schedule(
                 self,
