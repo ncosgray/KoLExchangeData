@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/java:21
+FROM public.ecr.aws/lambda/java:25
 
 # Set working directory
 ARG FUNCTION_DIR="/app"
